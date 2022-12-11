@@ -34,6 +34,29 @@ class MonkeyThrowTest:
         return worry % self.divisor == 0
 
 
+class ReductionStrategy:
+    def reduce(self, worry: int) -> int:
+        raise NotImplementedError()
+
+
+class NoOpWRS(ReductionStrategy):
+    def reduce(self, worry: int) -> int:
+        return worry
+
+
+class DivideByThreeWRS(ReductionStrategy):
+    def reduce(self, worry: int) -> int:
+        return worry // 3
+
+
+class ModuloWRS(ReductionStrategy):
+    def __init__(self, divisor: int):
+        self._divisor = divisor
+
+    def reduce(self, worry: int) -> int:
+        return worry % self._divisor
+
+
 class Monkey:
 
     def __init__(
@@ -50,6 +73,14 @@ class Monkey:
         self._test = throw_test
         self._targets = targets
         self._group = None
+        self._wrs = NoOpWRS()
+
+    @property
+    def thow_test_divisor(self) -> int:
+        return self._test.divisor
+
+    def set_wrs(self, wrs: ReductionStrategy) -> None:
+        self._wrs = wrs
 
     def __repr__(self) -> str:
         return "\n".join([
@@ -77,7 +108,7 @@ class Monkey:
         while self._items:
             item = self._items.popleft()
             item = self._operation(item)
-            item //= 3
+            item = self._wrs.reduce(item)
             if self._test(item):
                 self.throw_at(item, self._targets[0])
             else:
